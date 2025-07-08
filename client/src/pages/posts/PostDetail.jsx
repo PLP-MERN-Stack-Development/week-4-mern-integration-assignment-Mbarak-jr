@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import Button from '../../components/common/Button';
 import { getPostBySlug, deletePost } from '../../services/postService';
+import { trackPostView, trackPostLike, checkIfLiked } from '../../services/analyticsService';
 import CommentForm from '../../components/posts/CommentForm';
 import { formatDate } from '../../utils/formatDate';
 
@@ -13,6 +14,8 @@ export default function PostDetail() {
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [likeCount, setLikeCount] = useState(0);
+  const [hasLiked, setHasLiked] = useState(false);
 
   useEffect(() => {
     const fetchPost = async () => {
@@ -20,6 +23,12 @@ export default function PostDetail() {
         setLoading(true);
         const data = await getPostBySlug(slug);
         setPost(data);
+        setLikeCount(data.likes || 0);
+
+        await trackPostView(slug); // record view
+
+        const liked = await checkIfLiked(data._id);
+        setHasLiked(liked);
       } catch (err) {
         setError(err.message || 'Failed to load post');
       } finally {
@@ -32,12 +41,24 @@ export default function PostDetail() {
 
   const handleDelete = async () => {
     if (!window.confirm('Are you sure you want to delete this post?')) return;
-    
+
     try {
       await deletePost(post._id);
       navigate('/dashboard/posts');
     } catch (err) {
       setError(err.message || 'Failed to delete post');
+    }
+  };
+
+  const handleLike = async () => {
+    if (hasLiked) return;
+
+    try {
+      await trackPostLike(post._id);
+      setLikeCount(prev => prev + 1);
+      setHasLiked(true);
+    } catch (err) {
+      console.error('Failed to like post:', err);
     }
   };
 
@@ -57,9 +78,9 @@ export default function PostDetail() {
             className="w-full h-64 object-cover rounded-lg mb-6"
           />
         )}
-        
+
         <h1 className="text-3xl font-bold mb-2">{post.title}</h1>
-        
+
         <div className="flex items-center space-x-4 mb-6 text-sm text-gray-500">
           <span>By {post.author.username}</span>
           <span>•</span>
@@ -75,6 +96,22 @@ export default function PostDetail() {
               </Link>
             </>
           )}
+        </div>
+
+        {/* Analytics row */}
+        <div className="mb-4 flex items-center space-x-6 text-sm text-gray-600">
+          <span title="Views">👁️ {post.viewCount || 0}</span>
+
+          <button
+            onClick={handleLike}
+            disabled={hasLiked}
+            className={`flex items-center space-x-1 ${hasLiked ? 'text-pink-400 cursor-not-allowed' : 'text-pink-600 hover:underline'}`}
+          >
+            <span>❤️</span>
+            <span>{likeCount} likes</span>
+          </button>
+
+          <span title="Comments">💬 {post.comments?.length || 0}</span>
         </div>
 
         <div className="mb-8" dangerouslySetInnerHTML={{ __html: post.content }} />
@@ -110,9 +147,10 @@ export default function PostDetail() {
         )}
       </article>
 
+      {/* Comments section */}
       <section className="mt-12">
         <h2 className="text-xl font-semibold mb-4">Comments</h2>
-        
+
         {user ? (
           <CommentForm postId={post._id} />
         ) : (

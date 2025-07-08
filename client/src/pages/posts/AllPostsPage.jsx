@@ -9,8 +9,7 @@ const AllPostsPage = () => {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-
-  const [confirmingDelete, setConfirmingDelete] = useState(null); // Post to delete
+  const [confirmingDelete, setConfirmingDelete] = useState(null);
 
   useEffect(() => {
     const fetchPosts = async () => {
@@ -101,6 +100,15 @@ const AllPostsPage = () => {
             ))
           )}
         </div>
+      </div>
+
+      {/* ✅ Centered Back to Dashboard Button */}
+      <div className="flex justify-center mt-8">
+        <Link to="/dashboard">
+          <Button className="bg-amber-600 hover:bg-amber-700 text-white px-6 py-2">
+            Back to Dashboard
+          </Button>
+        </Link>
       </div>
 
       {/* Confirmation Modal */}

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   BarChart,
   Bar,
@@ -9,34 +9,51 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
-
-const data = [
-  { name: 'Jan', views: 4000, likes: 2400 },
-  { name: 'Feb', views: 3000, likes: 1398 },
-  { name: 'Mar', views: 2000, likes: 9800 },
-  { name: 'Apr', views: 2780, likes: 3908 },
-  { name: 'May', views: 1890, likes: 4800 },
-  { name: 'Jun', views: 2390, likes: 3800 },
-  { name: 'Jul', views: 3490, likes: 4300 },
-];
+import { getMonthlyAnalytics } from '../../services/analyticsService';
+import LoadingSpinner from '../../components/shared/LoadingSpinner'; // ✅ Correct import
 
 const AnalyticsChart = () => {
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const fetchAnalytics = async () => {
+      try {
+        const result = await getMonthlyAnalytics();
+        setData(result);
+      } catch (err) {
+        setError(err.message || 'Failed to load analytics');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAnalytics();
+  }, []);
+
+  if (loading) return (
+    <div className="text-center">
+      <p className="text-sm text-gray-500 mb-2">Loading chart...</p>
+      <LoadingSpinner variant="pulse" />
+    </div>
+  );
+
+  if (error) return <div className="text-red-500 p-4">{error}</div>;
+
   return (
     <div className="bg-white shadow rounded-lg p-6">
-      <h3 className="text-lg font-medium leading-6 text-gray-900 mb-4">Engagement Analytics</h3>
+      <h3 className="text-lg font-medium leading-6 text-gray-900 mb-4">
+        Engagement Analytics
+      </h3>
       <div className="h-80">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={data}
-            margin={{
-              top: 5,
-              right: 30,
-              left: 20,
-              bottom: 5,
-            }}
+            margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
           >
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="name" />
+            <XAxis dataKey="month" />
             <YAxis />
             <Tooltip />
             <Legend />

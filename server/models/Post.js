@@ -25,7 +25,7 @@ const PostSchema = new mongoose.Schema(
     },
     slug: {
       type: String,
-      unique: true, // Removed `required` so it can be auto-generated
+      unique: true,
     },
     excerpt: {
       type: String,
@@ -50,6 +50,14 @@ const PostSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    likes: {
+      type: Number,
+      default: 0,
+    },
+    readTime: {
+      type: Number,
+      default: 3, // fallback if content is empty
+    },
     comments: [
       {
         user: {
@@ -70,14 +78,19 @@ const PostSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Auto-generate slug from title
+// Auto-generate slug + readTime before saving
 PostSchema.pre('save', function (next) {
-  if (!this.isModified('title')) return next();
+  if (this.isModified('title')) {
+    this.slug = this.title
+      .toLowerCase()
+      .replace(/[^\w ]+/g, '')
+      .replace(/ +/g, '-');
+  }
 
-  this.slug = this.title
-    .toLowerCase()
-    .replace(/[^\w ]+/g, '')
-    .replace(/ +/g, '-');
+  if (this.isModified('content')) {
+    const words = this.content.trim().split(/\s+/).length;
+    this.readTime = Math.ceil(words / 200); // ~200 words/min
+  }
 
   next();
 });

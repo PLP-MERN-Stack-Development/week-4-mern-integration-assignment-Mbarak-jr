@@ -19,7 +19,7 @@ function PostDetail() {
       try {
         setLoading(true);
         const data = await getPostBySlug(slug);
-        setPost(data);
+        setPost(data.post || data); // fallback
       } catch (err) {
         setError(err.message || 'Failed to load post');
       } finally {
@@ -32,7 +32,6 @@ function PostDetail() {
 
   const handleDelete = async () => {
     if (!window.confirm('Are you sure you want to delete this post?')) return;
-    
     try {
       await deletePost(post._id);
       navigate('/dashboard');
@@ -45,30 +44,30 @@ function PostDetail() {
   if (error) return <div className="text-red-500">{error}</div>;
   if (!post) return <div>Post not found</div>;
 
-  const isAuthor = user && (user.id === post.author._id || user.id === post.author);
+  const isAuthor = user && (user.id === post.author?._id || user.id === post.author);
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       <article className="prose prose-amber max-w-none">
         {post.featuredImage && (
-          <img 
-            src={post.featuredImage} 
-            alt={post.title} 
+          <img
+            src={post.featuredImage}
+            alt={post.title}
             className="w-full h-64 object-cover rounded-lg mb-6"
           />
         )}
-        
+
         <h1 className="text-3xl font-bold mb-2">{post.title}</h1>
-        
-        <div className="flex items-center space-x-4 mb-6 text-sm text-gray-500">
-          <span>By {post.author.username}</span>
+
+        <div className="flex items-center space-x-4 mb-4 text-sm text-gray-500">
+          <span>By {post.author?.username || 'Unknown Author'}</span>
           <span>•</span>
           <span>{formatDate(post.createdAt)}</span>
           {post.category && (
             <>
               <span>•</span>
-              <Link 
-                to={`/categories/${post.category._id}`} 
+              <Link
+                to={`/categories/${post.category._id}`}
                 className="text-amber-600 hover:underline"
               >
                 {post.category.name}
@@ -77,13 +76,20 @@ function PostDetail() {
           )}
         </div>
 
+        {/* 📊 Engagement Stats */}
+        <div className="flex gap-4 mb-6 text-sm text-gray-600">
+          <span>{post.viewCount ?? 0} views</span>
+          <span>{post.likes ?? 0} likes</span>
+          <span>{post.readTime ?? 0} min read</span>
+        </div>
+
         <div className="mb-8" dangerouslySetInnerHTML={{ __html: post.content }} />
 
-        {post.tags && post.tags.length > 0 && (
+        {post.tags?.length > 0 && (
           <div className="flex flex-wrap gap-2 mb-8">
-            {post.tags.map(tag => (
-              <span 
-                key={tag} 
+            {post.tags.map((tag) => (
+              <span
+                key={tag}
                 className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800"
               >
                 {tag}
@@ -99,9 +105,9 @@ function PostDetail() {
                 Edit Post
               </Button>
             </Link>
-            <Button 
+            <Button
               onClick={handleDelete}
-              variant="outline" 
+              variant="outline"
               className="border-red-400 text-red-400"
             >
               Delete Post
@@ -112,23 +118,28 @@ function PostDetail() {
 
       <section className="mt-12">
         <h2 className="text-xl font-semibold mb-4">Comments</h2>
-        
+
         {user ? (
           <CommentForm postId={post._id} />
         ) : (
           <p className="text-gray-500 mb-4">
-            <Link to="/login" className="text-amber-600 hover:underline">Log in</Link> to leave a comment
+            <Link to="/login" className="text-amber-600 hover:underline">
+              Log in
+            </Link>{' '}
+            to leave a comment
           </p>
         )}
 
         <div className="space-y-4 mt-6">
-          {post.comments && post.comments.length > 0 ? (
-            post.comments.map(comment => (
+          {post.comments?.length > 0 ? (
+            post.comments.map((comment) => (
               <div key={comment._id} className="border-b border-gray-200 pb-4">
                 <div className="flex justify-between items-start">
                   <div>
-                    <h3 className="font-medium">{comment.user.username}</h3>
-                    <p className="text-gray-500 text-sm">{formatDate(comment.createdAt)}</p>
+                    <h3 className="font-medium">{comment.user?.username || 'Anonymous'}</h3>
+                    <p className="text-gray-500 text-sm">
+                      {formatDate(comment.createdAt)}
+                    </p>
                   </div>
                 </div>
                 <p className="mt-2">{comment.content}</p>

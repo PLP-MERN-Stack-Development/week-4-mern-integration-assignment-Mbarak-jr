@@ -14,8 +14,8 @@ const PORT = process.env.PORT || 5000;
 
 // ✅ Fix CORS for frontend at localhost:5173
 app.use(cors({
-  origin: 'http://localhost:5173', // Vite dev server
-  credentials: true
+  origin: 'http://localhost:5173',
+  credentials: true,
 }));
 
 // Parse JSON and form data
@@ -33,19 +33,20 @@ if (process.env.NODE_ENV === 'development') {
   });
 }
 
-// Routes
+// ✅ Routes
 app.use('/api/posts', require('./routes/postRoutes'));
 app.use('/api/categories', require('./routes/categories'));
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/hero', require('./routes/heroRoutes'));
 app.use('/api/dashboard', require('./routes/dashboardRoutes'));
+app.use('/api/analytics', require('./routes/analyticsRoutes')); // ✅ New analytics route
 
 // Test route
 app.get('/', (req, res) => {
   res.send('🚀 MERN Blog API is running');
 });
 
-// Error handler
+// Global error handler
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(err.statusCode || 500).json({
@@ -54,7 +55,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Start server only after DB is connected
+// Start server only after DB connection
 const startServer = async () => {
   try {
     await connectDB();
@@ -67,7 +68,7 @@ const startServer = async () => {
   }
 };
 
-// Handle unhandled promises
+// Handle unhandled promise rejections
 process.on('unhandledRejection', (err) => {
   console.error('❗ Unhandled Promise Rejection:', err);
   process.exit(1);

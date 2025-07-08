@@ -9,10 +9,14 @@ function Navbar() {
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
 
-  const handleLogout = () => {
-    logout();
-    navigate('/');
-    setIsOpen(false);
+  const handleLogout = async () => {
+    try {
+      await logout(); // Ensure logout completes before redirect
+      setIsOpen(false);
+      navigate('/');
+    } catch (err) {
+      console.error('Logout failed:', err);
+    }
   };
 
   const toggleMenu = () => {
@@ -55,12 +59,12 @@ function Navbar() {
                 >
                   Create Post
                 </Link>
-                <Link 
+                <button
                   onClick={handleLogout}
                   className="px-3 py-2 rounded-md text-sm font-medium hover:bg-amber-500/20 transition-colors duration-200"
                 >
                   Logout
-                </Link>
+                </button>
               </>
             ) : (
               <>
@@ -125,12 +129,12 @@ function Navbar() {
               >
                 Create Post
               </Link>
-              <Link
+              <button
                 onClick={handleLogout}
-                className="block px-3 py-2 rounded-md text-base font-medium hover:bg-amber-500/20 transition-colors duration-200"
+                className="block w-full text-left px-3 py-2 rounded-md text-base font-medium hover:bg-amber-500/20 transition-colors duration-200"
               >
                 Logout
-              </Link>
+              </button>
             </>
           ) : (
             <>
