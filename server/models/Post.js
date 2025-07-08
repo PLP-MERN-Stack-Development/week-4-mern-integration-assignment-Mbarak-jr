@@ -1,6 +1,5 @@
-// Post.js - Mongoose model for blog posts
-
 const mongoose = require('mongoose');
+const validator = require('validator');
 
 const PostSchema = new mongoose.Schema(
   {
@@ -17,11 +16,16 @@ const PostSchema = new mongoose.Schema(
     featuredImage: {
       type: String,
       default: 'default-post.jpg',
+      validate: {
+        validator: function (v) {
+          return v === 'default-post.jpg' || validator.isURL(v);
+        },
+        message: 'Featured image must be a valid URL or left blank',
+      },
     },
     slug: {
       type: String,
-      required: true,
-      unique: true,
+      unique: true, // Removed `required` so it can be auto-generated
     },
     excerpt: {
       type: String,
@@ -66,35 +70,33 @@ const PostSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Create slug from title before saving
+// Auto-generate slug from title
 PostSchema.pre('save', function (next) {
-  if (!this.isModified('title')) {
-    return next();
-  }
-  
+  if (!this.isModified('title')) return next();
+
   this.slug = this.title
     .toLowerCase()
     .replace(/[^\w ]+/g, '')
     .replace(/ +/g, '-');
-    
+
   next();
 });
 
-// Virtual for post URL
+// Virtual URL
 PostSchema.virtual('url').get(function () {
   return `/posts/${this.slug}`;
 });
 
-// Method to add a comment
+// Add comment method
 PostSchema.methods.addComment = function (userId, content) {
   this.comments.push({ user: userId, content });
   return this.save();
 };
 
-// Method to increment view count
+// Increment view count method
 PostSchema.methods.incrementViewCount = function () {
   this.viewCount += 1;
   return this.save();
 };
 
-module.exports = mongoose.model('Post', PostSchema); 
+module.exports = mongoose.model('Post', PostSchema);
